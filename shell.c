@@ -22,7 +22,9 @@ int main(int argc, char *argv[]) {
         while(strcmp(input, "exit") != 0) {
                 printf("Type anything into the command line: ");
                 fgets(input, 1000, stdin);
-                commands = parseInfo(input);
-                command_index = 0;
+                commands = parseInfo(input, ";"); 
+                for(int i = 0; i < sizeof(commands)/sizeof(commands[0]); i++) {
+                        executeInfo(parseInfo(commands[i], " "));
+                }
         }
 }
