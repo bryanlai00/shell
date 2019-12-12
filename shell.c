@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include "shell_head.h"
 
 //Part 1: Read a line at a time, parse the line to separate the command from its arguments. It should then fork and exec the command. The parent process should wait until the exec'd program exits and then it should read the next command. Check chdir();
@@ -19,12 +20,19 @@ int main(int argc, char *argv[]) {
         char input[1000];
         char ** commands;
         int command_index;
-        while(strcmp(input, "exit") != 0) {
+        /*
+        char * test[3];
+        test[0] = "ls";
+        test[1] = "-a";
+        test[2] = NULL;
+        */
+        while(1) {
                 printf("Type anything into the command line: ");
                 fgets(input, 1000, stdin);
                 commands = parseInfo(input, ";"); 
-                for(int i = 0; i < sizeof(commands)/sizeof(commands[0]); i++) {
-                        executeInfo(parseInfo(commands[i], " "));
+                while(*commands) {
+                        executeInfo(parseInfo(*commands, " "));
+                        commands++;
                 }
         }
 }

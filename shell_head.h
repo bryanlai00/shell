@@ -3,4 +3,4 @@
 
 char * fixString(char * s);
 char ** parseInfo(char * s, char * delimeter);
-void executeInfo(char ** s);
+int executeInfo(char ** s);

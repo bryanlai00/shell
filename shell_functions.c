@@ -3,13 +3,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include "shell_head.h"
 
 char * fixString(char *s) {
         int index = 0;
         while(s[index] != 0) {
                 if(s[index] == '\n') {
-                        s[index] = 0;
+                        s[index] = '\0';
                 }
                 index++;
         }
@@ -26,12 +27,9 @@ char ** parseInfo(char * s, char * delimeter) {
         fixString(s);
         int index = 0;
         char *found;
-        char **str = malloc(sizeof(char) * 10);
-        for (int i =0 ; i < 10; ++i) {
-                str[i] = malloc(20 * sizeof(char));
-        }
+        char **str = calloc(1024, sizeof(char));
         while( (found = strsep(&s, delimeter)) != NULL) {
-                strcpy(str[index], found);
+                str[index] = fixString(found);
                 if(!strcmp(delimeter, ";")) {
                         printf("Command %d: %s\n", index, str[index]);
                 }
@@ -40,20 +38,34 @@ char ** parseInfo(char * s, char * delimeter) {
         return str;
 }
 
-void executeInfo(char **s) {
-        printf("First arg: %s  Second arg: %s \n", s[0], s[1]);
-        //If the command is ls.
+int executeInfo(char **s) {
+        int child_status;
+        pid_t child_pid;
+        printf("First arg: %s  Second arg: %s\n", s[0], s[1]);
+        if(strcmp(s[0], "exit") == 0) {
+                exit(0);
+        }
         if(strcmp(s[0], "cd") == 0) {
                 printf("Ran cd!\n");
-                if(s[1] = NULL) {
+                if(s[1] == NULL) {
                         chdir(getenv("HOME"));
                 }
                 else {
-                        chdir(s[1]);
+                        chdir(fixString(s[1]));
                 }
         }
         //Every other command
         else {
-                execvp(s[0], s);
+                child_pid = fork();
+                if(!child_pid) {
+                        //Child Process forks previously and executes.
+                        execvp(s[0], s);
+                        printf("Unrecognized command entered!\n");
+                        exit(0);
+                }
+                else {
+                        //This ensures that the parent process runs after the child process.
+                        wait(&child_status);
+                }
         }
 }
