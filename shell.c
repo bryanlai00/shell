@@ -26,8 +26,9 @@ int main(int argc, char *argv[]) {
         test[1] = "-a";
         test[2] = NULL;
         */
+        printf("Hello world! \n");
         while(1) {
-                printf("Type anything into the command line: ");
+                printf("$ ");
                 fgets(input, 1000, stdin);
                 commands = parseInfo(input, ";"); 
                 while(*commands) {
