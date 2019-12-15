@@ -71,6 +71,93 @@ int is_pipe(char **s) {
         return 0;
 }
 
+void run_redirect(char ** s) {
+        //Index for iterating.
+        int index = 0;
+        int begin_index = 0;
+        int end_index = 0;
+        int seen_del = 0;
+        //Create file descriptor:
+        int *fd;
+        //The arg after the > or <.
+        char **end_args = calloc(1024, sizeof(char));
+        //Beginning args of redirect separated by a space.
+        char **begin_args = calloc(1024, sizeof(char));
+        if(is_redirect(s) == 1){
+                //Iterating to put vals in redir_args
+                while(s[index] != NULL) {
+                        if(!strcmp(s[index],">")) {
+                                seen_del = index;
+                                index++;
+                        }
+                        if(strcmp(s[index],">") && seen_del == 0) {
+                                begin_args[begin_index] = s[index];
+                                printf("Begin Arg: %s\n", begin_args[begin_index]);
+                                begin_index++;
+                        }
+                        if(strcmp(s[index],">") && seen_del != 0) {
+                                end_args[end_index] = s[index];
+                                end_index++;
+                        }
+                        index++;
+                }
+                index = 0;
+                // Testing to see if each of the new arrays get the right arguments 
+                /*while(begin_args[index] != NULL) {
+                  printf("Beginning Args, Index: %d, Val: %s\n", index, begin_args[index]);
+                  index++;
+                  }
+                  index = 0;
+                  while(end_args[index] != NULL) {
+                  printf("Ending Args, Index: %d, Val: %s, Seen_del: %d\n", index, end_args[index], seen_del);
+                  index++;
+                  }
+                  */
+                fflush(stdout);
+                int fd = open(end_args[0], O_CREAT | O_WRONLY, 0644);
+                dup(STDOUT_FILENO);
+                dup2(fd, STDOUT_FILENO);
+                execvp(begin_args[0], begin_args);
+                close(fd);
+        }
+        if(is_redirect(s) == 2) {
+                //Iterating to put vals in redir_args
+                while(s[index] != NULL) {
+                        if(!strcmp(s[index],">")) {
+                                seen_del = index;
+                                index++;
+                        }
+                        if(strcmp(s[index],">") && seen_del == 0) {
+                                begin_args[begin_index] = s[index];
+                                begin_index++;
+                        }
+                        if(strcmp(s[index],">") && seen_del != 0) {
+                                end_args[end_index] = s[index];
+                                end_index++;
+                        }
+                        index++;
+                }
+                index = 0;
+                // Testing to see if each of the new arrays get the right arguments 
+                /*while(begin_args[index] != NULL) {
+                  printf("Beginning Args, Index: %d, Val: %s\n", index, begin_args[index]);
+                  index++;
+                  }
+                  index = 0;
+                  while(end_args[index] != NULL) {
+                  printf("Ending Args, Index: %d, Val: %s, Seen_del: %d\n", index, end_args[index], seen_del);
+                  index++;
+                  }*/
+                fflush(stdout);
+                int fd = open(end_args[0], O_RDONLY, 0644);
+                dup(STDIN_FILENO);
+                dup2(fd, STDIN_FILENO);
+                fflush(stdout);
+                execvp(begin_args[0], begin_args);
+                close(fd);
+        }
+}
+
 int executeInfo(char **s) {
         int child_status;
         pid_t child_pid;
@@ -92,27 +179,21 @@ int executeInfo(char **s) {
         else {
                 //If there is a redirection:
                 if(is_redirect(s) != 0) {
-                        //Create file descriptor:
-                        int *fd;
-                        //The args before and after the > or <.
-                        char **redir_args;
-                        //Beginning args of redirect separated by a space.
-                        char **begin_args;
-                        if(is_redirect(s) == 1){
-                                redir_args = parseInfo(s[0], ">");
-                                begin_args = parseInfo(redir_args[0], " ");
-                                printf("Redirecting Args: %s\n", redir_args[1]);
-                                printf("Begin arguments: %s\n", begin_args[0]);
-                                printf("Well at least out redirecting is detected...\n");
+                        child_pid = fork();
+                        if(!child_pid) {
+                                run_redirect(s);
+                                exit(0);
                         }
-                        else if(is_redirect(s) == 2) {
-                                redir_args = parseInfo(s[0], "<");
-                                begin_args = parseInfo(redir_args[0], " ");
-                                printf("Well at least in redirecting is detected...\n");
+                        else {
+                                wait(&child_status);
                         }
+
                 }
                 else if(is_pipe(s) != 0) {
-                                printf("Well at least piping is detected...\n");
+                        printf("is pipe: %s\n", s[0]);
+                        FILE *f = popen(s[0], "w");
+                        printf("Well at least piping is detected...\n");
+                        pclose(f);
                 }
                 else {
                         child_pid = fork();
