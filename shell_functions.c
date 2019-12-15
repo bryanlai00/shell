@@ -161,6 +161,50 @@ void run_redirect(char ** s) {
         }
 }
 
+void run_pipe(char ** s) {
+        //Index for iterating.
+        int index = 0;
+        int begin_index = 0;
+        int end_index = 0;
+        int seen_del = 0;
+        //Create file descriptor:
+        int *fd;
+        //The arg after the > or <.
+        char **end_args = calloc(1024, sizeof(char));
+        //Beginning args of redirect separated by a space.
+        char **begin_args = calloc(1024, sizeof(char));
+        //Iterating to put vals in redir_args
+        while(s[index] != NULL) {
+                if(!strcmp(s[index],"|")) {
+                        seen_del = index;
+                        index++;
+                }
+                if(strcmp(s[index],"|") && seen_del == 0) {
+                        begin_args[begin_index] = s[index];
+                        //printf("Begin Arg: %s\n", begin_args[begin_index]);
+                        begin_index++;
+                }
+                if(strcmp(s[index],"|") && seen_del != 0) {
+                        end_args[end_index] = s[index];
+                        end_index++;
+                }
+                index++;
+        }
+        char line[256];
+        char command[256];
+        FILE *output, *input;
+        input = popen(begin_args[0], "r");
+        //Iterate through the file stream and add all values in line and concatenate it into one single string, "command".
+        while (fgets(line,256,input)) {
+                line[sizeof(line)-1] = 0;
+                strcat(command,line);
+        }
+        pclose(input);
+        output = popen(end_args[0], "w");
+        fprintf(output,"%s",command);
+        pclose(output);
+}
+
 int executeInfo(char **s) {
         int child_status;
         pid_t child_pid;
@@ -193,10 +237,14 @@ int executeInfo(char **s) {
 
                 }
                 else if(is_pipe(s) != 0) {
-                        printf("is pipe: %s\n", s[0]);
-                        FILE *f = popen(s[0], "w");
-                        printf("Well at least piping is detected...\n");
-                        pclose(f);
+                        child_pid = fork();
+                        if(!child_pid) {
+                                run_pipe(s);
+                                exit(0);
+                        }
+                        else {
+                                wait(&child_status);
+                        }
                 }
                 else {
                         child_pid = fork();

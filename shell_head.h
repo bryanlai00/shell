@@ -7,3 +7,4 @@ int executeInfo(char ** s);
 int is_redirect(char ** s);
 int is_pipe(char ** s);
 void run_redirect(char ** s);
+void run_pipe(char ** s);
