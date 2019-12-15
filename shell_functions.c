@@ -30,17 +30,20 @@ char ** parseInfo(char * s, char * delimeter) {
         char *found;
         char **str = calloc(1024, sizeof(char));
         while( (found = strsep(&s, delimeter)) != NULL) {
-                str[index] = fixString(found);
-                /*
-                if(!strcmp(delimeter, ";")) {
-                        printf("Command %d: %s\n", index, str[index]);
+                //Ensures that when you type an extra space and separating through commands with ;, the function actually reads.
+                if(strcmp(found, "")) { 
+                        str[index] = fixString(found);
+                        //printf("Args --> %s\n", str[index]);
+                        /*
+                           if(!strcmp(delimeter, ";")) {
+                           printf("Command %d: %s\n", index, str[index]);
+                           }
+                           */
+                        index++;
                 }
-                */
-                index++;
         }
         return str;
 }
-
 //Returns 1 if > is present and 2 if < is present.
 int is_redirect(char **s) {
         int index = 0;
@@ -92,7 +95,7 @@ void run_redirect(char ** s) {
                         }
                         if(strcmp(s[index],">") && seen_del == 0) {
                                 begin_args[begin_index] = s[index];
-                                printf("Begin Arg: %s\n", begin_args[begin_index]);
+                                //printf("Begin Arg: %s\n", begin_args[begin_index]);
                                 begin_index++;
                         }
                         if(strcmp(s[index],">") && seen_del != 0) {
@@ -123,15 +126,15 @@ void run_redirect(char ** s) {
         if(is_redirect(s) == 2) {
                 //Iterating to put vals in redir_args
                 while(s[index] != NULL) {
-                        if(!strcmp(s[index],">")) {
+                        if(!strcmp(s[index],"<")) {
                                 seen_del = index;
                                 index++;
                         }
-                        if(strcmp(s[index],">") && seen_del == 0) {
+                        if(strcmp(s[index],"<") && seen_del == 0) {
                                 begin_args[begin_index] = s[index];
                                 begin_index++;
                         }
-                        if(strcmp(s[index],">") && seen_del != 0) {
+                        if(strcmp(s[index],"<") && seen_del != 0) {
                                 end_args[end_index] = s[index];
                                 end_index++;
                         }
